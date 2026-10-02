@@ -32,7 +32,7 @@ h1{font:400 26px/1.1 var(--display);margin:0;letter-spacing:.02em;text-wrap:bala
 .panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px;display:grid;gap:16px;min-width:0}
 label{display:grid;gap:6px;font-weight:600;font-size:13px;letter-spacing:.02em}
 .hint{font-weight:400;color:var(--muted);font-size:12.5px}
-select,input[type=number],input[type=text],input[type=file]{font:inherit;font-weight:400;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:7px 9px;min-width:0;max-width:100%}
+select,input[type=number],input[type=file]{font:inherit;font-weight:400;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:7px 9px;min-width:0;max-width:100%}
 .row{display:flex;gap:8px;align-items:center;font-weight:400}
 button{font:600 14px var(--body);border-radius:7px;padding:10px 14px;border:1px solid var(--accent);cursor:pointer}
 button.main{background:var(--accent);color:var(--accent-fg)}
@@ -65,11 +65,6 @@ canvas{width:100%;max-width:768px;aspect-ratio:2/1;image-rendering:pixelated;bac
         <input id="num" type="number" min="1" max="30" value="1">
         <span class="hint">Le fichier s'appellera image1.py, image2.py... (jusqu'a 30)</span>
       </label>
-      <label for="alb">Album
-        <input id="alb" type="text" maxlength="20" value="Photos">
-        <span class="hint">Les images qui ont le meme nom d'album sont rangees ensemble.</span>
-      </label>
-      <div class="row"><input id="masq" type="checkbox"><label for="masq" style="font-weight:400">Album masque (un code est demande pour l'ouvrir)</label></div>
       <label for="px">Taille des pixels
         <select id="px">
           <option value="1">1 - pleine resolution (fichier lourd)</option>
@@ -109,8 +104,7 @@ canvas{width:100%;max-width:768px;aspect-ratio:2/1;image-rendering:pixelated;bac
     <ol class="steps">
       <li>Copie le fichier <code>imageN.py</code> telecharge a la racine de la calculatrice, a cote de <code>galerie.py</code>.</li>
       <li>Ejecte la calculatrice, puis lance <code>galerie.py</code> dans l'appli Python.</li>
-      <li>Choisis un album avec haut et bas puis OK. Dans un album : gauche et droite pour changer d'image, OK pour masquer ou afficher la legende, haut pour revenir aux albums.</li>
-      <li>Un album masque demande un code de 4 fleches (haut, bas, gauche, droite par defaut). Pour le changer, modifie la ligne <code>CODE="HBGD"</code> au debut de <code>galerie.py</code>.</li>
+      <li>Fleches gauche et droite pour passer d'une image a l'autre, OK pour masquer ou afficher la legende.</li>
     </ol>
   </div>
 </div>
@@ -127,7 +121,7 @@ $("f").addEventListener("change",e=>{
   r.onload=()=>{const i=new Image(); i.onload=()=>{img=i; convertir();}; i.src=r.result;};
   r.readAsDataURL(file);
 });
-["num","px","nc","fit","dith","alb","masq"].forEach(id=>$(id).addEventListener("change",()=>img&&convertir()));
+["num","px","nc","fit","dith"].forEach(id=>$(id).addEventListener("change",()=>img&&convertir()));
 
 function medianCut(px,n){
   // px : tableau de [r,g,b]
@@ -196,8 +190,7 @@ function convertir(){
   const num=Math.max(1,Math.min(30,+$("num").value||1));
   const nomPropre=nomFichier.normalize("NFD").replace(/[^\x20-\x7e]/g,"").replace(/["\\]/g,"").slice(0,40)||"image";
   const lignes=[]; for(let k=0;k<D.length;k+=76) lignes.push('"'+D.slice(k,k+76)+'"');
-  const album=$("alb").value.normalize("NFD").replace(/[^\x20-\x7e]/g,"").replace(/["\\]/g,"").trim().slice(0,20)||"Photos";
-  code=`# Image pour galerie.py (Graph Math+)\nALB="${album}"\nV=${$("masq").checked?1:0}\nNOM="${nomPropre}"\nL,H,S=${L},${H},${S}\nP=(${pal.map(p=>"("+p.join(",")+")").join(",")})\nD=(\n${lignes.join("\n")})\n`;
+  code=`# Image pour galerie.py (Graph Math+)\nNOM="${nomPropre}"\nL,H,S=${L},${H},${S}\nP=(${pal.map(p=>"("+p.join(",")+")").join(",")})\nD=(\n${lignes.join("\n")})\n`;
   const ko=(code.length/1024).toFixed(1);
   const cls=code.length>24000?"heavy":"big";
   $("meta").innerHTML=`<span>Fichier <b>image${num}.py</b></span><span>${L} x ${H} pixels, taille ${S}</span><span>${pal.length} couleurs</span><span class="${cls}">${ko} Ko</span>`;
