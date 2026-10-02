@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Convertisseur Video</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Silkscreen&family=IBM+Plex+Sans:wght@400;600&family=IBM+Plex+Mono&display=swap">
+<style>
+/* Poste de travail en deux colonnes : reglages a gauche, ecran de calculatrice a droite */
+:root{
+  --bg:#f3f3f8; --panel:#ffffff; --fg:#1b1d2e; --muted:#5d6178; --line:#d9dbe8;
+  --accent:#d0344f; --accent-fg:#ffffff; --screen:#0b0b14; --ok:#1f8a4c; --warn:#b5621b;
+  --display:"Silkscreen","Courier New",monospace;
+  --body:"IBM Plex Sans",system-ui,-apple-system,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#12131f; --panel:#1b1d2e; --fg:#e8e9f3; --muted:#9a9eb8; --line:#2e3149;
+  --accent:#ff6b83; --accent-fg:#12131f; --screen:#05050a; --ok:#52c784; --warn:#e3a05c; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#12131f; --panel:#1b1d2e; --fg:#e8e9f3; --muted:#9a9eb8; --line:#2e3149;
+  --accent:#ff6b83; --accent-fg:#12131f; --screen:#05050a; --ok:#52c784; --warn:#e3a05c; color-scheme:dark}
+html,body{margin:0}
+body{background:var(--bg);color:var(--fg);font:15px/1.5 var(--body);padding:24px 16px}
+.wrap{max-width:980px;margin:0 auto;display:grid;gap:20px}
+h1{font:400 26px/1.1 var(--display);margin:0;letter-spacing:.02em}
+.sub{color:var(--muted);margin:6px 0 0;max-width:64ch}
+.grid{display:grid;grid-template-columns:300px 1fr;gap:20px;align-items:start}
+@media (max-width:760px){.grid{grid-template-columns:1fr}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px;display:grid;gap:14px;min-width:0}
+label{display:grid;gap:6px;font-weight:600;font-size:13px;letter-spacing:.02em}
+.hint{font-weight:400;color:var(--muted);font-size:12.5px}
+select,input[type=number],input[type=file]{font:inherit;font-weight:400;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:7px 9px;max-width:100%}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+button{font:600 14px var(--body);border-radius:7px;padding:10px 14px;border:1px solid var(--accent);cursor:pointer}
+button.main{background:var(--accent);color:var(--accent-fg)}
+button.sec{background:transparent;color:var(--accent)}
+button:disabled{opacity:.45;cursor:not-allowed}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.screenbox{background:var(--screen);border-radius:12px;padding:14px;display:grid;gap:10px;min-width:0}
+canvas{width:100%;max-width:768px;aspect-ratio:2/1;image-rendering:pixelated;background:#000;border-radius:4px;display:block}
+.meta{display:flex;flex-wrap:wrap;gap:6px 18px;font:13px var(--mono);color:#c9cbe4}
+.meta b{color:#fff;font-weight:400}
+.good{color:#52c784}.heavy{color:#e3a05c}
+.bar{height:6px;background:#2a2b3d;border-radius:3px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--accent)}
+.actions{display:flex;flex-wrap:wrap;gap:10px}
+.msg{font-size:13px;color:var(--muted);min-height:1.2em}
+button.fait{border-color:var(--ok);color:var(--ok)}
+.steps{margin:0;padding-left:20px;color:var(--muted);display:grid;gap:4px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Convertisseur Video</h1>
+    <p class="sub">Transforme un court extrait video en fichiers <code>videoN_0.py</code>, <code>videoN_1.py</code>... lisibles par <code>video.py</code> sur ta Graph Math+. Pas de son, et la calculatrice affiche quelques images par seconde : choisis des extraits courts et peu agites.</p>
+  </header>
+
+  <div class="grid">
+    <div class="panel">
+      <label for="f">Video
+        <input id="f" type="file" accept="video/*">
+      </label>
+      <div class="two">
+        <label for="num">Numero
+          <input id="num" type="number" min="1" max="20" value="1">
+        </label>
+        <label for="deb">Debut (s)
+          <input id="deb" type="number" min="0" step="0.5" value="0">
+        </label>
+      </div>
+      <div class="two">
+        <label for="dur">Duree (s)
+          <input id="dur" type="number" min="1" max="60" value="8">
+        </label>
+        <label for="fps">Images/s
+          <select id="fps"><option>2</option><option>4</option><option selected>6</option><option>8</option></select>
+        </label>
+      </div>
+      <label for="taille">Taille
+        <select id="taille">
+          <option value="48">Petite (48 px, tres fluide)</option>
+          <option value="64" selected>Moyenne (64 px)</option>
+          <option value="96">Grande (96 px, plus lente)</option>
+        </select>
+        <span class="hint">Largeur de l'image avant agrandissement sur l'ecran.</span>
+      </label>
+      <label for="nc">Couleurs
+        <select id="nc"><option>8</option><option selected>16</option><option>32</option></select>
+      </label>
+      <div class="actions">
+        <button id="go" class="main" disabled>Convertir</button>
+      </div>
+      <div class="actions" id="dls"></div>
+      <div class="bar"><i id="prog"></i></div>
+      <div class="msg" id="msg">Choisis une video pour commencer.</div>
+    </div>
+
+    <div class="screenbox">
+      <canvas id="cv" width="384" height="192" aria-label="Apercu sur l'ecran de la calculatrice"></canvas>
+      <div class="meta" id="meta"><span>Apercu de l'ecran 384 x 192</span></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <strong>Ensuite, sur la calculatrice</strong>
+    <ol class="steps">
+      <li>Clique sur chaque bouton de telechargement : la video est decoupee en plusieurs fichiers (videoN_0.py, videoN_1.py...) et il les faut tous.</li>
+      <li>Copie-les a la racine de la calculatrice, a cote de <code>video.py</code>, puis ejecte-la.</li>
+      <li>Lance <code>video.py</code> : fleches pour choisir, OK pour lire, OK pour mettre en pause, fleche gauche pour arreter.</li>
+    </ol>
+  </div>
+</div>
+<video id="vid" muted playsinline hidden></video>
+
+<script>
+const A="0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz+/";
+const $=id=>document.getElementById(id);
+const vid=$("vid");
+let nomFichier="video", fichiers=[], frames=[], pal=[], L=64, Hh=32, S=6, fps=6, anim=null;
+
+$("f").addEventListener("change",e=>{
+  const file=e.target.files[0]; if(!file) return;
+  nomFichier=file.name;
+  vid.src=URL.createObjectURL(file);
+  vid.onloadedmetadata=()=>{
+    $("go").disabled=false;
+    $("msg").textContent="Video chargee ("+vid.duration.toFixed(1)+" s). Regle les options puis clique sur Convertir.";
+  };
+});
+
+function seek(t){return new Promise(r=>{const h=()=>{vid.removeEventListener("seeked",h);r();};vid.addEventListener("seeked",h);vid.currentTime=t;});}
+
+function medianCut(px,n){
+  let boites=[px];
+  while(boites.length<n){
+    let bi=-1,best=-1,canal=0;
+    boites.forEach((b,i)=>{ if(b.length<2) return;
+      for(let c=0;c<3;c++){let mn=255,mx=0;for(const p of b){if(p[c]<mn)mn=p[c];if(p[c]>mx)mx=p[c];} if(mx-mn>best){best=mx-mn;bi=i;canal=c;}}});
+    if(bi<0) break;
+    const b=boites[bi].sort((a,b)=>a[canal]-b[canal]); const m=b.length>>1;
+    boites.splice(bi,1,b.slice(0,m),b.slice(m));
+  }
+  return boites.map(b=>{let s=[0,0,0];for(const p of b){s[0]+=p[0];s[1]+=p[1];s[2]+=p[2];}return s.map(v=>Math.round(v/b.length));});
+}
+function proche(r,g,b){let bi=0,bd=1e9;for(let i=0;i<pal.length;i++){const p=pal[i];const d=(p[0]-r)**2*2+(p[1]-g)**2*4+(p[2]-b)**2*3;if(d<bd){bd=d;bi=i;}}return bi;}
+
+function code(prev,cur){
+  // jetons de 3 caracteres : (saut, longueur-1, couleur) ; couleur 63 = saut seul
+  let out="",pos=0,skip=0,i=0;
+  const n=cur.length;
+  while(i<n){
+    if(prev && prev[i]===cur[i]){skip++;i++;continue;}
+    let len=1; while(i+len<n && cur[i+len]===cur[i] && len<64 && !(prev && prev[i+len]===cur[i+len])) len++;
+    while(skip>63){const s=Math.min(skip,4096);const v=s-1;out+=A[Math.floor(v/64)]+A[v%64]+A[63];skip-=s;}
+    out+=A[skip]+A[len-1]+A[cur[i]]; skip=0; i+=len;
+  }
+  return out;
+}
+
+$("go").addEventListener("click",async()=>{
+  $("go").disabled=true; $("dls").innerHTML=""; if(anim) clearInterval(anim);
+  fps=+$("fps").value; const nc=+$("nc").value;
+  L=+$("taille").value;
+  const ratio=vid.videoHeight/vid.videoWidth;
+  Hh=Math.max(8,Math.round(L*ratio)); S=Math.max(1,Math.floor(Math.min(384/L,192/Hh)));
+  if(Hh*S>192){Hh=Math.floor(192/S);}
+  const deb=Math.max(0,+$("deb").value), dur=Math.min(60,Math.max(1,+$("dur").value));
+  const fin=Math.min(vid.duration,deb+dur);
+  const c=document.createElement("canvas"); c.width=L; c.height=Hh; const x=c.getContext("2d",{willReadFrequently:true});
+  const brut=[];
+  for(let t=deb,k=0;t<fin;t+=1/fps,k++){
+    await seek(t);
+    x.drawImage(vid,0,0,L,Hh);
+    brut.push(x.getImageData(0,0,L,Hh).data.slice());
+    $("prog").style.width=Math.round(100*(t-deb)/(fin-deb))+"%";
+    $("msg").textContent="Extraction des images... "+(k+1);
+  }
+  // palette commune
+  const ech=[]; for(const d of brut) for(let i=0;i<d.length;i+=4*7) ech.push([d[i],d[i+1],d[i+2]]);
+  pal=medianCut(ech,nc);
+  frames=brut.map(d=>{const f=new Uint8Array(L*Hh);for(let i=0;i<f.length;i++)f[i]=proche(d[i*4],d[i*4+1],d[i*4+2]);return f;});
+  // codage + decoupage en fichiers d'environ 12 Ko
+  const codes=frames.map((f,i)=>code(i?frames[i-1]:null,f));
+  const parts=[]; let cur=[],taille=0;
+  for(const s of codes){ if(taille+s.length>12000 && cur.length){parts.push(cur);cur=[];taille=0;} cur.push(s); taille+=s.length; }
+  parts.push(cur);
+  const num=Math.max(1,Math.min(20,+$("num").value||1));
+  const nomPropre=nomFichier.normalize("NFD").replace(/[^\x20-\x7e]/g,"").replace(/["\\]/g,"").slice(0,30)||"video";
+  const ligne=s=>{const l=[];for(let k=0;k<s.length;k+=78)l.push('"'+s.slice(k,k+78)+'"');return "("+(l.join("\n ")||'""')+")";};
+  fichiers=parts.map((p,i)=>{
+    let t=`# Video pour video.py (Graph Math+), partie ${i+1}/${parts.length}\n`;
+    if(i===0) t+=`NOM="${nomPropre}"\nL,H,S,FPS,NB=${L},${Hh},${S},${fps},${parts.length}\nDUREE=${(frames.length/fps).toFixed(1)}\nP=(${pal.map(q=>"("+q.join(",")+")").join(",")})\n`;
+    t+="F=[\n"+p.map(ligne).join(",\n")+"]\n";
+    return {nom:`video${num}_${i}.py`,texte:t};
+  });
+  const total=fichiers.reduce((a,f)=>a+f.texte.length,0);
+  $("meta").innerHTML=`<span><b>${frames.length}</b> images</span><span>${L} x ${Hh}, zoom x${S}</span><span>${pal.length} couleurs</span><span><b>${fichiers.length}</b> fichier(s)</span><span class="${total>60000?"heavy":"good"}">${(total/1024).toFixed(1)} Ko</span>`;
+  $("msg").textContent=(total>60000?"Video lourde : la lecture risque d'etre lente. ":"Pret. ")+"Clique sur CHAQUE bouton pour telecharger les "+fichiers.length+" fichier(s) : il les faut tous sur la calculatrice.";
+  fichiers.forEach(f=>{
+    const b=document.createElement("button"); b.className="sec"; b.textContent="Telecharger "+f.nom;
+    b.addEventListener("click",()=>{
+      const a=document.createElement("a");
+      a.href=URL.createObjectURL(new Blob([f.texte],{type:"text/x-python"}));
+      a.download=f.nom; document.body.appendChild(a); a.click(); a.remove();
+      b.textContent=f.nom+" telecharge"; b.classList.add("fait");
+    });
+    $("dls").appendChild(b);
+  });
+  $("prog").style.width="100%";
+  apercu();
+  $("go").disabled=false;
+});
+
+function apercu(){
+  const v=$("cv").getContext("2d");
+  const x0=Math.floor((384-L*S)/2), y0=Math.floor((192-Hh*S)/2);
+  let k=0;
+  v.fillStyle="#000"; v.fillRect(0,0,384,192);
+  anim=setInterval(()=>{
+    const f=frames[k];
+    for(let i=0;i<f.length;i++){const p=pal[f[i]];v.fillStyle=`rgb(${p[0]},${p[1]},${p[2]})`;v.fillRect(x0+(i%L)*S,y0+Math.floor(i/L)*S,S,S);}
+    k=(k+1)%frames.length;
+  },1000/fps);
+}
+
+</script>
+</body>
+</html>
