@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Convertisseur Galerie</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Silkscreen&family=IBM+Plex+Sans:wght@400;600&family=IBM+Plex+Mono&display=swap">
+<style>
+/* Mise en page : un poste de travail en deux colonnes, reglages a gauche, ecran de calculatrice a droite */
+:root{
+  --bg:#f3f3f8; --panel:#ffffff; --fg:#1b1d2e; --muted:#5d6178; --line:#d9dbe8;
+  --accent:#4a3fd0; --accent-fg:#ffffff; --screen:#14142d; --ok:#1f8a4c; --warn:#b5621b;
+  --display:"Silkscreen", "Courier New", monospace;
+  --body:"IBM Plex Sans", system-ui, -apple-system, sans-serif;
+  --mono:"IBM Plex Mono", ui-monospace, Menlo, monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#12131f; --panel:#1b1d2e; --fg:#e8e9f3; --muted:#9a9eb8; --line:#2e3149;
+  --accent:#8d84ff; --accent-fg:#12131f; --screen:#0b0b1c; --ok:#52c784; --warn:#e3a05c; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#12131f; --panel:#1b1d2e; --fg:#e8e9f3; --muted:#9a9eb8; --line:#2e3149;
+  --accent:#8d84ff; --accent-fg:#12131f; --screen:#0b0b1c; --ok:#52c784; --warn:#e3a05c; color-scheme:dark}
+html,body{margin:0}
+body{background:var(--bg);color:var(--fg);font:15px/1.5 var(--body);padding:24px 16px}
+.wrap{max-width:980px;margin:0 auto;display:grid;gap:20px}
+h1{font:400 26px/1.1 var(--display);margin:0;letter-spacing:.02em;text-wrap:balance}
+.sub{color:var(--muted);margin:6px 0 0;max-width:62ch}
+.grid{display:grid;grid-template-columns:300px 1fr;gap:20px;align-items:start}
+@media (max-width:760px){.grid{grid-template-columns:1fr}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px;display:grid;gap:16px;min-width:0}
+label{display:grid;gap:6px;font-weight:600;font-size:13px;letter-spacing:.02em}
+.hint{font-weight:400;color:var(--muted);font-size:12.5px}
+select,input[type=number],input[type=file]{font:inherit;font-weight:400;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:7px 9px;min-width:0;max-width:100%}
+.row{display:flex;gap:8px;align-items:center;font-weight:400}
+button{font:600 14px var(--body);border-radius:7px;padding:10px 14px;border:1px solid var(--accent);cursor:pointer}
+button.main{background:var(--accent);color:var(--accent-fg)}
+button.sec{background:transparent;color:var(--accent)}
+button:disabled{opacity:.45;cursor:not-allowed}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.screenbox{background:var(--screen);border-radius:12px;padding:14px;display:grid;gap:10px;min-width:0}
+canvas{width:100%;max-width:768px;aspect-ratio:2/1;image-rendering:pixelated;background:#fff;border-radius:4px;display:block}
+.meta{display:flex;flex-wrap:wrap;gap:6px 18px;font:13px var(--mono);color:#c9cbe4}
+.meta b{color:#fff;font-weight:400}
+.big{color:var(--ok)} .heavy{color:var(--warn)}
+.steps{margin:0;padding-left:20px;color:var(--muted);display:grid;gap:4px}
+.actions{display:flex;flex-wrap:wrap;gap:10px}
+.msg{font-size:13px;color:var(--muted);min-height:1.2em}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Convertisseur Galerie</h1>
+    <p class="sub">Transforme une photo en fichier <code>imageN.py</code> lisible par le programme <code>galerie.py</code> de ta Graph Math+. L'apercu montre exactement ce que la calculatrice affichera (384 x 192 pixels).</p>
+  </header>
+
+  <div class="grid">
+    <div class="panel">
+      <label for="f">Image
+        <input id="f" type="file" accept="image/*">
+      </label>
+      <label for="num">Numero de l'image
+        <input id="num" type="number" min="1" max="30" value="1">
+        <span class="hint">Le fichier s'appellera image1.py, image2.py... (jusqu'a 30)</span>
+      </label>
+      <label for="px">Taille des pixels
+        <select id="px">
+          <option value="1">1 - pleine resolution (fichier lourd)</option>
+          <option value="2" selected>2 - bon compromis</option>
+          <option value="3">3 - fichier tres leger</option>
+        </select>
+      </label>
+      <label for="nc">Nombre de couleurs
+        <select id="nc">
+          <option value="16">16</option>
+          <option value="32" selected>32</option>
+          <option value="64">64</option>
+        </select>
+      </label>
+      <label for="fit">Cadrage
+        <select id="fit">
+          <option value="contain" selected>Image entiere</option>
+          <option value="cover">Remplir l'ecran (rogne les bords)</option>
+        </select>
+      </label>
+      <div class="row"><input id="dith" type="checkbox"><label for="dith" style="font-weight:400">Tramage (plus joli pour les photos, fichier plus lourd)</label></div>
+      <div class="actions">
+        <button id="dl" class="main" disabled>Telecharger le fichier</button>
+        <button id="cp" class="sec" disabled>Copier le code</button>
+      </div>
+      <div class="msg" id="msg">Choisis une image pour commencer.</div>
+    </div>
+
+    <div class="screenbox">
+      <canvas id="cv" width="384" height="192" aria-label="Apercu sur l'ecran de la calculatrice"></canvas>
+      <div class="meta" id="meta"><span>Apercu de l'ecran 384 x 192</span></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <strong>Ensuite, sur la calculatrice</strong>
+    <ol class="steps">
+      <li>Copie le fichier <code>imageN.py</code> telecharge a la racine de la calculatrice, a cote de <code>galerie.py</code>.</li>
+      <li>Ejecte la calculatrice, puis lance <code>galerie.py</code> dans l'appli Python.</li>
+      <li>Fleches gauche et droite pour passer d'une image a l'autre, OK pour masquer ou afficher la legende.</li>
+    </ol>
+  </div>
+</div>
+
+<script>
+const A="0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz+/";
+const $=id=>document.getElementById(id);
+let img=null, nomFichier="image", code="";
+
+$("f").addEventListener("change",e=>{
+  const file=e.target.files[0]; if(!file) return;
+  nomFichier=file.name;
+  const r=new FileReader();
+  r.onload=()=>{const i=new Image(); i.onload=()=>{img=i; convertir();}; i.src=r.result;};
+  r.readAsDataURL(file);
+});
+["num","px","nc","fit","dith"].forEach(id=>$(id).addEventListener("change",()=>img&&convertir()));
+
+function medianCut(px,n){
+  // px : tableau de [r,g,b]
+  let boites=[px];
+  while(boites.length<n){
+    let bi=-1,best=-1,canal=0;
+    boites.forEach((b,i)=>{
+      if(b.length<2) return;
+      for(let c=0;c<3;c++){
+        let mn=255,mx=0; for(const p of b){if(p[c]<mn)mn=p[c]; if(p[c]>mx)mx=p[c];}
+        if(mx-mn>best){best=mx-mn;bi=i;canal=c;}
+      }
+    });
+    if(bi<0) break;
+    const b=boites[bi].sort((a,b)=>a[canal]-b[canal]);
+    const m=b.length>>1;
+    boites.splice(bi,1,b.slice(0,m),b.slice(m));
+  }
+  return boites.map(b=>{let s=[0,0,0]; for(const p of b){s[0]+=p[0];s[1]+=p[1];s[2]+=p[2];} return s.map(v=>Math.round(v/b.length));});
+}
+
+function proche(pal,r,g,b){
+  let bi=0,bd=1e9;
+  for(let i=0;i<pal.length;i++){const p=pal[i];const d=(p[0]-r)**2*2+(p[1]-g)**2*4+(p[2]-b)**2*3; if(d<bd){bd=d;bi=i;}}
+  return bi;
+}
+
+function convertir(){
+  const S=+$("px").value, N=+$("nc").value, fit=$("fit").value, dith=$("dith").checked;
+  const maxL=Math.floor(384/S), maxH=Math.floor(192/S);
+  let sc=fit==="contain"?Math.min(maxL/img.width,maxH/img.height):Math.max(maxL/img.width,maxH/img.height);
+  let L=Math.min(maxL,Math.max(1,Math.round(img.width*sc))), H=Math.min(maxH,Math.max(1,Math.round(img.height*sc)));
+  const c=document.createElement("canvas"); c.width=L; c.height=H;
+  const x=c.getContext("2d");
+  x.imageSmoothingQuality="high";
+  const dw=img.width*sc, dh=img.height*sc;
+  x.drawImage(img,(L-dw)/2,(H-dh)/2,dw,dh);
+  const d=x.getImageData(0,0,L,H).data;
+  const px=[]; for(let i=0;i<d.length;i+=4) px.push([d[i],d[i+1],d[i+2]]);
+  const pal=medianCut(px.map(p=>p.slice()),N);
+  // indices (avec tramage optionnel)
+  const buf=Float32Array.from(px.flat());
+  const idx=new Uint8Array(L*H);
+  for(let y=0;y<H;y++) for(let xx=0;xx<L;xx++){
+    const i=y*L+xx, r=buf[i*3],g=buf[i*3+1],b=buf[i*3+2];
+    const k=proche(pal,r,g,b); idx[i]=k;
+    if(dith){
+      const er=[r-pal[k][0],g-pal[k][1],b-pal[k][2]];
+      const sp=(dx,dy,f)=>{const X=xx+dx,Y=y+dy; if(X<0||X>=L||Y>=H) return; const j=(Y*L+X)*3; for(let t=0;t<3;t++) buf[j+t]+=er[t]*f;};
+      sp(1,0,7/16); sp(-1,1,3/16); sp(0,1,5/16); sp(1,1,1/16);
+    }
+  }
+  // codage par plages
+  let D="";
+  let i=0;
+  while(i<idx.length){
+    let n=1; while(i+n<idx.length && idx[i+n]===idx[i] && n<64) n++;
+    D+=A[idx[i]]+A[n-1]; i+=n;
+  }
+  // apercu
+  const v=$("cv").getContext("2d");
+  v.fillStyle="#ffffff"; v.fillRect(0,0,384,192);
+  const x0=Math.floor((384-L*S)/2), y0=Math.floor((192-H*S)/2);
+  for(let k=0;k<idx.length;k++){const p=pal[idx[k]]; v.fillStyle=`rgb(${p[0]},${p[1]},${p[2]})`; v.fillRect(x0+(k%L)*S,y0+Math.floor(k/L)*S,S,S);}
+  // fichier python
+  const num=Math.max(1,Math.min(30,+$("num").value||1));
+  const nomPropre=nomFichier.normalize("NFD").replace(/[^\x20-\x7e]/g,"").replace(/["\\]/g,"").slice(0,40)||"image";
+  const lignes=[]; for(let k=0;k<D.length;k+=76) lignes.push('"'+D.slice(k,k+76)+'"');
+  code=`# Image pour galerie.py (Graph Math+)\nNOM="${nomPropre}"\nL,H,S=${L},${H},${S}\nP=(${pal.map(p=>"("+p.join(",")+")").join(",")})\nD=(\n${lignes.join("\n")})\n`;
+  const ko=(code.length/1024).toFixed(1);
+  const cls=code.length>24000?"heavy":"big";
+  $("meta").innerHTML=`<span>Fichier <b>image${num}.py</b></span><span>${L} x ${H} pixels, taille ${S}</span><span>${pal.length} couleurs</span><span class="${cls}">${ko} Ko</span>`;
+  $("msg").textContent=code.length>24000?"Fichier lourd : il peut etre lent a afficher. Essaie une taille de pixels plus grande ou moins de couleurs.":"Pret. Telecharge le fichier et copie-le sur la calculatrice.";
+  $("dl").disabled=$("cp").disabled=false;
+}
+
+$("dl").addEventListener("click",()=>{
+  const num=Math.max(1,Math.min(30,+$("num").value||1));
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob([code],{type:"text/x-python"}));
+  a.download=`image${num}.py`; document.body.appendChild(a); a.click(); a.remove();
+});
+$("cp").addEventListener("click",async()=>{
+  try{await navigator.clipboard.writeText(code); $("msg").textContent="Code copie.";}
+  catch(e){$("msg").textContent="Copie impossible ici, utilise le bouton Telecharger.";}
+});
+</script>
+</body>
+</html>
